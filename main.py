@@ -1,3 +1,5 @@
+import os
+
 import config as Config
 import common as Common
 
@@ -66,4 +68,7 @@ Common.saveLogMsg("\nInitialized Token Encoder.")
 data_set = [train_set, val_set, test_set]
 handler = MulBiGRUHandler(data_set, onehot_encoder, device)
 model = handler.get_model()
+if os.path.exists(Config.MODEL_PATH):
+    state = torch.load(Config.MODEL_PATH)
+    model.load_state_dict(state['model'])
 model = handler.run(model)

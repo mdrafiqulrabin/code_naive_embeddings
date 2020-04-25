@@ -7,6 +7,7 @@ from torch.nn import functional as F
 
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
 
 import config as Config
 import common as Common
@@ -165,7 +166,7 @@ class MulBiGRUHandler:
             val_f1 = f1_score(actual, predictions, average='weighted')
             val_acc = accuracy_score(actual, predictions)
 
-            return predictions, total_loss / len(val_set), val_f1, val_acc
+            return actual, predictions, total_loss / len(val_set), val_f1, val_acc
 
         # Training of Model
         def training_loop(model, dataset):
@@ -182,9 +183,9 @@ class MulBiGRUHandler:
 
                 model, shuffled_train_set = train(model, optimizer, shuffled_train_set, batch_size=Config.BATCH_SIZE)
 
-                train_pred, train_loss, train_f1, train_acc = evaluate(model, shuffled_train_set, batch_size=Config.BATCH_SIZE)
+                _, _, train_loss, train_f1, train_acc = evaluate(model, shuffled_train_set, batch_size=Config.BATCH_SIZE)
                 epoch_msg += ' [TRAIN] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(train_loss, train_f1, train_acc)
-                val_pred, val_loss, val_f1, val_acc = evaluate(model, dataset[1], batch_size=Config.BATCH_SIZE)
+                _, _, val_loss, val_f1, val_acc = evaluate(model, dataset[1], batch_size=Config.BATCH_SIZE)
                 epoch_msg += ' [VAL] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(val_loss, val_f1, val_acc)
 
                 best_f1, epoch_track, patience_track = Common.track_best_model(Config.CHECKPOINT, model, epoch + 1,
@@ -207,7 +208,12 @@ class MulBiGRUHandler:
 
         # Start Training
         assert running_model is not None
-        best_model = training_loop(running_model, self.dataset)
-        test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2], batch_size=Config.BATCH_SIZE)
+        if Config.MODE == "train":
+            best_model = training_loop(running_model, self.dataset)
+        else:
+            best_model = running_model
+        test_true, test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2], batch_size=Config.BATCH_SIZE)
         Common.saveLogMsg('\n[Test] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(test_loss, test_f1, test_acc))
+        clf_report = classification_report(test_true, test_pred, output_dict=False)
+        Common.saveLogMsg('\n[Test] Classification Report: \n{}'.format(clf_report))
         return best_model

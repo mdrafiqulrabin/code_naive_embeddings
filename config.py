@@ -1,5 +1,6 @@
-RUN = "mbgru_token"
-LOG_PATH = RUN + ".log"
+TITLE = "mbgru_token"
+LOG_PATH = TITLE + ".log"
+MODE = "test" #train
 
 MANUAL_SEED = 42
 
@@ -22,4 +23,7 @@ HIDDEN_LAYER = 2
 HIDDEN_DIM = 128
 DROPOUT_RATIO = 0.3
 
-CHECKPOINT = RUN + ".model"
+CHECKPOINT = TITLE + ".model"
+
+RESULT_PATH = "/scratch/rabin/token_embedding/results/"
+MODEL_PATH  = RESULT_PATH + CHECKPOINT
