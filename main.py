@@ -7,6 +7,7 @@ import torch
 torch.manual_seed(Config.MANUAL_SEED)
 
 from token_encoder import OneHotTokenEncoder
+from model_handler import MulBiGRUHandler
 
 # Create Log File
 open(Config.LOG_PATH, 'w').close()
@@ -15,6 +16,7 @@ open(Config.LOG_PATH, 'w').close()
 Common.saveLogMsg("\nAttaching device...")
 device = None
 if torch.cuda.is_available():
+    torch.set_default_tensor_type(torch.cuda.FloatTensor)
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
@@ -28,8 +30,9 @@ with open(Config.TOKEN_PATH) as jsons_file:
         json_dict = eval(str(each_json))
         path = json_dict['filename']
         method = (path.split("_")[-1]).replace(".java", "")
+        label = Common.TargetList.index(method)
         tokens = list(set(json_dict['tokens']))
-        entry = {'path': path, 'method': method, 'tokens': tokens}
+        entry = {'path': path, 'method': method, 'tokens': tokens, 'label': label}
         if Config.DATASET_NAME + "/training/" in path:
             train_set.append(entry)
         elif Config.DATASET_NAME + "/validation/" in path:
@@ -57,4 +60,10 @@ Common.saveLogMsg('idx2vocab size: {}'.format(len(idx2vocab)))
 
 # OneHot Encoder for Tokens
 onehot_encoder = OneHotTokenEncoder(vocab2idx)
-Common.saveLogMsg("\nInitialized OneHot Encoder.")
+Common.saveLogMsg("\nInitialized Token Encoder.")
+
+# Run Model
+data_set = [train_set, val_set, test_set]
+handler = MulBiGRUHandler(data_set, onehot_encoder, device)
+model = handler.get_model()
+model = handler.run(model)
