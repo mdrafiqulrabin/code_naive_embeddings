@@ -1,6 +1,8 @@
-TITLE = "mbgru_token"
+TYPE = "word" #token/word/hcf
+MODE = "train" #train/test
+
+TITLE = "mbgru_" + TYPE
 LOG_PATH = TITLE + ".log"
-MODE = "test" #train
 
 MANUAL_SEED = 42
 
@@ -8,7 +10,9 @@ DATA_PATH = "/scratch/rabin/token_embedding/data/"
 DATASET_NAME = "java-large"
 ONLY_IDENTIFIER = True
 TOKEN_PATH = DATA_PATH + "Token/" + DATASET_NAME + "_" + str(ONLY_IDENTIFIER) + ".jsonl"
+RAW_PATH = DATA_PATH + "100P/" + DATASET_NAME + "_methods.txt"
 
+GLOVE_FILE = DATA_PATH + "Glove/" + "glove.6B.50d.txt"
 PAD_TOKEN, UNK_TOKEN = '<PAD>', '<UNK>'
 PAD_INDEX, UNK_INDEX = 0, 1
 

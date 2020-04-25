@@ -1,3 +1,4 @@
+import os, re
 import config as Config
 import torch
 
@@ -23,3 +24,21 @@ def track_best_model(path, model, epoch, best_f1, val_f1, val_acc, val_loss, pat
 
 # Target List
 TargetList = ["equals", "main", "setUp", "onCreate", "toString", "run", "hashCode", "init", "execute", "get", "close"]
+
+# Remove Comments and Get Words
+def get_words(file_path):
+    contents = ""
+    with open(file_path, 'r') as my_file:
+        contents = my_file.read().lower()
+
+    def replacer(match):
+        s = match.group(0)
+        return " " if s.startswith('/') else s
+    comments = r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"'
+    pattern = re.compile(comments, re.DOTALL | re.MULTILINE)
+    contents = re.sub(pattern, replacer, contents)
+
+    contents = ' '.join(re.split(r'[^a-zA-Z]', contents))
+    words = contents.split()
+
+    return words
