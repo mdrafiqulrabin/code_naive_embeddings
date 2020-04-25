@@ -5,6 +5,8 @@ np.random.seed(Config.MANUAL_SEED)
 import torch
 torch.manual_seed(Config.MANUAL_SEED)
 
+from token_encoder import OneHotTokenEncoder
+
 # Utilities
 log_file = Config.RUN + ".log"
 open(log_file, 'w').close()
@@ -47,4 +49,16 @@ flat_train_tokens = sum(train_tokens, [])
 val_tokens = [sample['tokens'] for sample in val_set]
 flat_val_tokens = sum(val_tokens, [])
 vocab_tokens = list(set(flat_train_tokens + flat_val_tokens))
-saveLogMsg('Vocabulary size: {}\n'.format(len(vocab_tokens)))
+saveLogMsg('Vocabulary size: {}'.format(len(vocab_tokens)))
+
+# vocab2idx and idx2vocab
+vocab2idx = {w:i+2 for i, w in enumerate(vocab_tokens)}
+idx2vocab = {i+2:w for i, w in enumerate(vocab_tokens)}
+vocab2idx[Config.PAD_TOKEN], vocab2idx[Config.UNK_TOKEN] = Config.PAD_INDEX, Config.UNK_INDEX
+idx2vocab[Config.PAD_INDEX], idx2vocab[Config.UNK_INDEX] = Config.PAD_TOKEN, Config.UNK_TOKEN
+saveLogMsg('vocab2idx size: {}'.format(len(vocab2idx)))
+saveLogMsg('idx2vocab size: {}'.format(len(idx2vocab)))
+
+# OneHot Encoder for Tokens
+onehot_encoder = OneHotTokenEncoder(vocab2idx)
+saveLogMsg("\nInitialized {}".format(onehot_encoder))
