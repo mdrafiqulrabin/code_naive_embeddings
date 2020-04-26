@@ -201,7 +201,7 @@ class MulBiGRUHandler:
             state = torch.load(Config.CHECKPOINT)
             model.load_state_dict(state['model'])
 
-            Common.saveLogMsg('\nReturning best model - epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
+            Common.saveLogMsg('\nReturning best model - [VAL] epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
                 format(state['epoch'], state['loss'], state['f1'], state['acc']))
 
             return model

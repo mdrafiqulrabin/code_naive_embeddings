@@ -42,3 +42,13 @@ def get_words(file_path):
     words = contents.split()
 
     return words
+
+# vocab2idx and idx2vocab
+def get_vocab2idx_idx2vocab(vocab_tokens):
+    vocab2idx = {w: i + 2 for i, w in enumerate(vocab_tokens)}
+    idx2vocab = {i + 2: w for i, w in enumerate(vocab_tokens)}
+    vocab2idx[Config.PAD_TOKEN], vocab2idx[Config.UNK_TOKEN] = Config.PAD_INDEX, Config.UNK_INDEX
+    idx2vocab[Config.PAD_INDEX], idx2vocab[Config.UNK_INDEX] = Config.PAD_TOKEN, Config.UNK_TOKEN
+    saveLogMsg('vocab2idx size: {}'.format(len(vocab2idx)))
+    saveLogMsg('idx2vocab size: {}'.format(len(idx2vocab)))
+    return vocab2idx, idx2vocab

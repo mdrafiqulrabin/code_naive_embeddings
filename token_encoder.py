@@ -144,3 +144,38 @@ class HandcraftedFeatureEncoder(nn.Module):
         }
 
         return result
+
+class MethodTokenEncoder(nn.Module):
+    def __init__(self, vocab_tokens):
+        super(MethodTokenEncoder, self).__init__()
+        self.token2idx = vocab_tokens
+        self.emb_dim = len(vocab_tokens)
+
+    def forward(self, samples):
+        unk_idx = self.token2idx[Config.UNK_TOKEN]
+        pad_idx = self.token2idx[Config.PAD_TOKEN]
+
+        encoded = np.zeros((len(samples), self.emb_dim), dtype=int)
+        for i in range(len(encoded)):
+            tokens = [self.token2idx.get(token, unk_idx) for token in samples[i]]
+            for j in tokens:
+                encoded[i, j] = 1
+        encoded = [[tokens] for tokens in encoded]
+
+        masks = torch.zeros(len(encoded), len(encoded[0])).long()
+        for i in range(len(encoded)):
+            masks[i, :] = 1
+
+        encoded = torch.tensor(encoded).long()
+        lengths = masks.sum(-1)
+
+        if torch.cuda.is_available():
+            encoded = encoded.cuda()
+            masks = masks.cuda()
+
+        result = {
+            'mask': masks,
+            'encoded': encoded
+        }
+
+        return result

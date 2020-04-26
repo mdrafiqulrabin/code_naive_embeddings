@@ -8,7 +8,7 @@ np.random.seed(Config.MANUAL_SEED)
 import torch
 torch.manual_seed(Config.MANUAL_SEED)
 
-from token_encoder import OneHotTokenEncoder, GloveWordEmbedder, HandcraftedFeatureEncoder
+from token_encoder import OneHotTokenEncoder, GloveWordEmbedder, HandcraftedFeatureEncoder, MethodTokenEncoder
 from model_handler import MulBiGRUHandler
 
 # Create Log File
@@ -39,7 +39,7 @@ def add_dataset_entry(path, tokens):
     else:
         test_set.append(entry)
 
-if Config.TOKEN_TYPE == "idf" or Config.TOKEN_TYPE == "token":
+if Config.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
     with open(Config.TOKEN_PATH, 'r') as jsons_file:
         for each_json in jsons_file:
             json_dict = eval(str(each_json))
@@ -49,7 +49,8 @@ if Config.TOKEN_TYPE == "idf" or Config.TOKEN_TYPE == "token":
 elif Config.TOKEN_TYPE == "word":
     with open(Config.RAW_PATH, 'r') as path_file:
         for each_path in path_file:
-            path = Config.DATA_PATH + each_path.replace('\n', '')
+            each_path = each_path.replace('\n', '')
+            path = Config.DATA_PATH + "Raw/" + each_path
             tokens = list(set(Common.get_words(path)))
             add_dataset_entry(path, tokens)
 elif Config.TOKEN_TYPE == "hcf":
@@ -66,9 +67,7 @@ Common.saveLogMsg("#training={}, #validation={}, #test={}".format(len(train_set)
 
 # Vocabulary of Tokens
 vocab_tokens = None
-if Config.TOKEN_TYPE == "hcf":
-    pass
-else:
+if Config.TOKEN_TYPE != "hcf":
     Common.saveLogMsg("\nCreating vocabulary...")
     train_tokens = [sample['tokens'] for sample in train_set]
     flat_train_tokens = sum(train_tokens, [])
@@ -79,20 +78,17 @@ else:
 
 # Token Encoder
 encoder = None
-if Config.TOKEN_TYPE == "idf" or Config.TOKEN_TYPE == "token":
-    # vocab2idx and idx2vocab
-    vocab2idx = {w: i + 2 for i, w in enumerate(vocab_tokens)}
-    idx2vocab = {i + 2: w for i, w in enumerate(vocab_tokens)}
-    vocab2idx[Config.PAD_TOKEN], vocab2idx[Config.UNK_TOKEN] = Config.PAD_INDEX, Config.UNK_INDEX
-    idx2vocab[Config.PAD_INDEX], idx2vocab[Config.UNK_INDEX] = Config.PAD_TOKEN, Config.UNK_TOKEN
-    Common.saveLogMsg('vocab2idx size: {}'.format(len(vocab2idx)))
-    Common.saveLogMsg('idx2vocab size: {}'.format(len(idx2vocab)))
-    encoder = OneHotTokenEncoder(vocab2idx)
+if Config.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
+    vocab2idx, idx2vocab = Common.get_vocab2idx_idx2vocab(vocab_tokens)
+    encoder = MethodTokenEncoder(vocab2idx)
 elif Config.TOKEN_TYPE == "word":
     Common.saveLogMsg("\nLoading Glove from {}...".format(Config.GLOVE_FILE))
     encoder = GloveWordEmbedder(vocab_tokens, Config.GLOVE_FILE)
 elif Config.TOKEN_TYPE == "hcf":
     encoder = HandcraftedFeatureEncoder()
+else:
+    vocab2idx, idx2vocab = Common.get_vocab2idx_idx2vocab(vocab_tokens)
+    encoder = OneHotTokenEncoder(vocab2idx)
 
 Common.saveLogMsg("\nInitialized Token Encoder: {}".format(encoder))
 
