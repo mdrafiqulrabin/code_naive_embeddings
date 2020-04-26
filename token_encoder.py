@@ -7,18 +7,15 @@ import os
 class OneHotTokenEncoder(nn.Module):
     def __init__(self, vocab_tokens):
         super(OneHotTokenEncoder, self).__init__()
-
         self.token2idx = vocab_tokens
         self.emb_dim = len(vocab_tokens)
 
     def one_hot(self, token_id):
-
         encoded = np.zeros(len(self.token2idx), dtype=int)
         encoded[token_id] = 1
         return encoded
 
     def forward(self, samples):
-
         unk_idx = self.token2idx[Config.UNK_TOKEN]
         pad_idx = self.token2idx[Config.PAD_TOKEN]
 
@@ -115,6 +112,35 @@ class GloveWordEmbedder(nn.Module):
         result = {
             'encoded': self.embeddings(encoded),
             'mask': masks,
+        }
+
+        return result
+
+class HandcraftedFeatureEncoder(nn.Module):
+    def __init__(self):
+        super(HandcraftedFeatureEncoder, self).__init__()
+        self.emb_dim = 39 #TODO
+
+    def forward(self, samples):
+        encoded = np.zeros((len(samples), self.emb_dim), dtype=int)
+        for i in range(len(encoded)):
+            encoded[i, :] = np.array(samples[i])
+        encoded = [[tokens] for tokens in encoded]
+
+        masks = torch.zeros(len(encoded), len(encoded[0])).long()
+        for i in range(len(encoded)):
+            masks[i, :] = 1
+
+        encoded = torch.tensor(encoded).long()
+        lengths = masks.sum(-1)
+
+        if torch.cuda.is_available():
+            encoded = encoded.cuda()
+            masks = masks.cuda()
+
+        result = {
+            'mask': masks,
+            'encoded': encoded
         }
 
         return result
