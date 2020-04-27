@@ -1,6 +1,6 @@
 MODE = "train" #train/test
 
-TOKEN_TYPE   = "AllToken" #[OnlyId/OnlyTk/AllToken]/word/hcf
+TOKEN_TYPE   = "char" #[OnlyId/OnlyTk/AllToken]/word/char/hcf
 DATASET_NAME = "java-large" # java-large/java-med/java-small
 DATASET_TYPE = "Reduced" #Original/Reduced/100P
 NUM_TARGET   = 11
@@ -12,13 +12,14 @@ RAW_PATH     = DATA_PATH + "Raw/" + DATASET_TYPE + "/" + DATASET_NAME + "_method
 TOKEN_PATH   = DATA_PATH + "Token/" + DATASET_TYPE + "/" + DATASET_NAME + "_" + TOKEN_TYPE + ".jsonl"
 HCF_PATH     = DATA_PATH + "Handcrafted/" + DATASET_TYPE + "/" + DATASET_NAME + "_hcf.csv"
 
-GLOVE_FILE = DATA_PATH + "Glove/" + "glove.6B.50d.txt"
+GLOVE_FILE = DATA_PATH + "GloVe/glove.6B.300d.txt"
+if TOKEN_TYPE == "char": GLOVE_FILE = DATA_PATH + "GloVe/glove.840B.300d-" + TOKEN_TYPE + ".txt"
 PAD_TOKEN, UNK_TOKEN = '<PAD>', '<UNK>'
 PAD_INDEX, UNK_INDEX = 0, 1
 
 MANUAL_SEED = 42
 
-BATCH_SIZE = 30
+BATCH_SIZE = 16
 EPOCH = 1000
 PATIENCE = 10
 

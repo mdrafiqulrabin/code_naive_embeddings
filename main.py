@@ -8,7 +8,7 @@ np.random.seed(Config.MANUAL_SEED)
 import torch
 torch.manual_seed(Config.MANUAL_SEED)
 
-from token_encoder import OneHotTokenEncoder, GloveWordEmbedder, HandcraftedFeatureEncoder, MethodTokenEncoder
+from token_encoder import *
 from model_handler import MulBiGRUHandler
 
 # Create Log File
@@ -25,7 +25,7 @@ else:
 Common.saveLogMsg("device = {}".format(str(device)))
 
 # Loading Data
-Common.saveLogMsg("\nLoading data...")
+Common.saveLogMsg("\nLoading data [{}]...".format(Config.TOKEN_TYPE))
 train_set, val_set, test_set = [], [], []
 
 def add_dataset_entry(path, tokens):
@@ -46,12 +46,12 @@ if Config.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
             path = json_dict['filename']
             tokens = list(set(json_dict['tokens']))
             add_dataset_entry(path, tokens)
-elif Config.TOKEN_TYPE == "word":
+elif Config.TOKEN_TYPE in ["word", "char"]:
     with open(Config.RAW_PATH, 'r') as path_file:
         for each_path in path_file:
             each_path = each_path.replace('\n', '')
             path = Config.DATA_PATH + "Raw/" + each_path
-            tokens = list(set(Common.get_words(path)))
+            tokens = list(Common.get_chars_or_words(path))
             add_dataset_entry(path, tokens)
 elif Config.TOKEN_TYPE == "hcf":
     with open(Config.HCF_PATH, 'r') as hcf_file:
@@ -81,9 +81,9 @@ encoder = None
 if Config.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
     vocab2idx, idx2vocab = Common.get_vocab2idx_idx2vocab(vocab_tokens)
     encoder = MethodTokenEncoder(vocab2idx)
-elif Config.TOKEN_TYPE == "word":
-    Common.saveLogMsg("\nLoading Glove from {}...".format(Config.GLOVE_FILE))
-    encoder = GloveWordEmbedder(vocab_tokens, Config.GLOVE_FILE)
+elif Config.TOKEN_TYPE in ["word", "char"]:
+    Common.saveLogMsg("\nLoading GloVe from {}...".format(Config.GLOVE_FILE))
+    encoder = GloVeEmbedder(vocab_tokens, Config.GLOVE_FILE)
 elif Config.TOKEN_TYPE == "hcf":
     encoder = HandcraftedFeatureEncoder()
 else:

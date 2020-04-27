@@ -25,11 +25,11 @@ def track_best_model(path, model, epoch, best_f1, val_f1, val_acc, val_loss, pat
 # Target List
 TargetList = ["equals", "main", "setUp", "onCreate", "toString", "run", "hashCode", "init", "execute", "get", "close"]
 
-# Remove Comments and Get Words
-def get_words(file_path):
+# Remove Comments and Get Words/Chars
+def get_chars_or_words(file_path):
     contents = ""
     with open(file_path, 'r') as my_file:
-        contents = my_file.read().lower()
+        contents = my_file.read()
 
     def replacer(match):
         s = match.group(0)
@@ -38,10 +38,13 @@ def get_words(file_path):
     pattern = re.compile(comments, re.DOTALL | re.MULTILINE)
     contents = re.sub(pattern, replacer, contents)
 
-    contents = ' '.join(re.split(r'[^a-zA-Z]', contents))
-    words = contents.split()
+    if Config.TOKEN_TYPE == "word":
+        contents = ' '.join(re.split(r'[^a-zA-Z]', contents))
+        contents = contents.lower().split()
+    elif Config.TOKEN_TYPE == "char":
+        contents = list(contents)
 
-    return words
+    return contents
 
 # vocab2idx and idx2vocab
 def get_vocab2idx_idx2vocab(vocab_tokens):
