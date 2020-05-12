@@ -1,6 +1,6 @@
 MODE = "train" #train/test
 
-TOKEN_TYPE   = "char" #[OnlyId/OnlyTk/AllToken]/word/char/hcf
+TOKEN_TYPE   = "OnlyTk" #[OnlyId/OnlyTk/AllToken]/word/char/hcf
 DATASET_NAME = "java-large" # java-large/java-med/java-small
 DATASET_TYPE = "Reduced" #Original/Reduced/100P
 NUM_TARGET   = 11
@@ -30,8 +30,6 @@ HIDDEN_LAYER = 2
 HIDDEN_DIM = 128
 DROPOUT_RATIO = 0.3
 
-LOG_PATH = TITLE + ".log"
-CHECKPOINT = TITLE + ".model"
-
 RESULT_PATH = "/scratch/rabin/token_embedding/results/"
-MODEL_PATH  = RESULT_PATH + CHECKPOINT
+MODEL_PATH  = RESULT_PATH + TITLE + ".model"
+LOG_PATH    = RESULT_PATH + TITLE + ".log"

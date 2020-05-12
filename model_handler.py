@@ -9,8 +9,8 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 
-import config as Config
-import common as Common
+import config as cf
+import helper as hp
 
 # Multi-layer Bidirectional GRU
 class MulBiGRULayer(nn.Module):
@@ -48,7 +48,7 @@ class RNNClassifier(nn.Module):
         super(RNNClassifier, self).__init__()
         self.encoder = encoder
         self.extractor = extractor
-        self.classifier = nn.Linear(extractor.hidden_dim, Config.OUTPUT_DIM)
+        self.classifier = nn.Linear(extractor.hidden_dim, cf.OUTPUT_DIM)
 
     def forward(self, tokens, targets=None):
         encoded = self.encoder(tokens)
@@ -69,15 +69,15 @@ class MulBiGRUHandler:
     def get_model(self):
 
         # Set the MulBiGRULayer
-        model_layer = MulBiGRULayer(self.encoder.emb_dim, hidden_dim=Config.HIDDEN_DIM,
-                                    num_layers=Config.HIDDEN_LAYER, drop_ratio=Config.DROPOUT_RATIO)
-        Common.saveLogMsg("\nModel Layer = {}".format(model_layer))
+        model_layer = MulBiGRULayer(self.encoder.emb_dim, hidden_dim=cf.HIDDEN_DIM,
+                                    num_layers=cf.HIDDEN_LAYER, drop_ratio=cf.DROPOUT_RATIO)
+        hp.saveLogMsg("\nModel Layer = {}".format(model_layer))
 
         # Set the RNNClassifier
         running_model = RNNClassifier(self.encoder, model_layer)
         if torch.cuda.is_available():
             running_model = running_model.to(self.device)
-        Common.saveLogMsg("\nRunning Model = {}".format(running_model))
+        hp.saveLogMsg("\nRunning Model = {}".format(running_model))
 
         return running_model
 
@@ -92,7 +92,7 @@ class MulBiGRUHandler:
             total_loss = 0
             batch_tokens, batch_target = [], []
 
-            random.Random(Config.MANUAL_SEED).shuffle(shuffled_train_set)
+            random.Random(cf.MANUAL_SEED).shuffle(shuffled_train_set)
 
             for i in range(len(shuffled_train_set)):
 
@@ -175,49 +175,49 @@ class MulBiGRUHandler:
         # Training of Model
         def training_loop(model, dataset):
 
-            optimizer = optim.SGD(model.parameters(), lr=Config.LEARNING_RATE, momentum=Config.MOMENTUM)
+            optimizer = optim.SGD(model.parameters(), lr=cf.LEARNING_RATE, momentum=cf.MOMENTUM)
 
             shuffled_train_set = dataset[0]
             best_f1 = 0
             patience_track = 0
 
-            for epoch in range(Config.EPOCH):
+            for epoch in range(cf.EPOCH):
 
-                epoch_msg = '[Epoch {}] / {}'.format(epoch + 1, Config.EPOCH)
+                epoch_msg = '[Epoch {}] / {}'.format(epoch + 1, cf.EPOCH)
 
-                model, shuffled_train_set = train(model, optimizer, shuffled_train_set, batch_size=Config.BATCH_SIZE)
+                model, shuffled_train_set = train(model, optimizer, shuffled_train_set, batch_size=cf.BATCH_SIZE)
 
-                _, _, train_loss, train_f1, train_acc = evaluate(model, shuffled_train_set, batch_size=Config.BATCH_SIZE)
+                _, _, train_loss, train_f1, train_acc = evaluate(model, shuffled_train_set, batch_size=cf.BATCH_SIZE)
                 epoch_msg += ' [TRAIN] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(train_loss, train_f1, train_acc)
-                _, _, val_loss, val_f1, val_acc = evaluate(model, dataset[1], batch_size=Config.BATCH_SIZE)
+                _, _, val_loss, val_f1, val_acc = evaluate(model, dataset[1], batch_size=cf.BATCH_SIZE)
                 epoch_msg += ' [VAL] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(val_loss, val_f1, val_acc)
 
-                best_f1, epoch_track, patience_track = Common.track_best_model(Config.CHECKPOINT, model, epoch + 1,
+                best_f1, epoch_track, patience_track = hp.track_best_model(cf.MODEL_PATH, model, epoch + 1,
                                     best_f1, val_f1, val_acc, val_loss, patience_track)
-                Common.saveLogMsg(epoch_msg + epoch_track)
-                if patience_track == int(Config.PATIENCE):
-                    Common.saveLogMsg('\nNo accuracy improvement for {} consecutive epochs, stopping training!'
-                                    .format(Config.PATIENCE))
+                hp.saveLogMsg(epoch_msg + epoch_track)
+                if patience_track == int(cf.PATIENCE):
+                    hp.saveLogMsg('\nNo accuracy improvement for {} consecutive epochs, stopping training!'
+                                    .format(cf.PATIENCE))
                     break
 
-            Common.saveLogMsg('Done Training.')
+            hp.saveLogMsg('Done Training.')
 
-            state = torch.load(Config.CHECKPOINT)
+            state = torch.load(cf.MODEL_PATH)
             model.load_state_dict(state['model'])
 
-            Common.saveLogMsg('\nReturning best model - [VAL] epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
+            hp.saveLogMsg('\nReturning best model - [VAL] epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
                 format(state['epoch'], state['loss'], state['f1'], state['acc']))
 
             return model
 
         # Start Training
         assert running_model is not None
-        if Config.MODE == "train":
+        if cf.MODE == "train":
             best_model = training_loop(running_model, self.dataset)
         else:
             best_model = running_model
-        test_true, test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2], batch_size=Config.BATCH_SIZE)
-        Common.saveLogMsg('\n[Test] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(test_loss, test_f1, test_acc))
+        test_true, test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2], batch_size=cf.BATCH_SIZE)
+        hp.saveLogMsg('\n[Test] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(test_loss, test_f1, test_acc))
         clf_report = classification_report(test_true, test_pred, output_dict=False)
-        Common.saveLogMsg('\n[Test] Classification Report: \n{}'.format(clf_report))
+        hp.saveLogMsg('\n[Test] Classification Report: \n{}'.format(clf_report))
         return best_model

@@ -1,11 +1,11 @@
 import os, re
-import config as Config
+import config as cf
 import torch
 
 # Save Log Message
 def saveLogMsg(msg):
     print(msg)
-    with open(Config.LOG_PATH, "a") as log_file:
+    with open(cf.LOG_PATH, "a") as log_file:
         log_file.write(msg + "\n")
 
 # Track Best Model
@@ -38,10 +38,10 @@ def get_chars_or_words(file_path):
     pattern = re.compile(comments, re.DOTALL | re.MULTILINE)
     contents = re.sub(pattern, replacer, contents)
 
-    if Config.TOKEN_TYPE == "word":
+    if cf.TOKEN_TYPE == "word":
         contents = ' '.join(re.split(r'[^a-zA-Z]', contents))
         contents = contents.lower().split()
-    elif Config.TOKEN_TYPE == "char":
+    elif cf.TOKEN_TYPE == "char":
         contents = list(contents)
 
     return contents
@@ -50,8 +50,8 @@ def get_chars_or_words(file_path):
 def get_vocab2idx_idx2vocab(vocab_tokens):
     vocab2idx = {w: i + 2 for i, w in enumerate(vocab_tokens)}
     idx2vocab = {i + 2: w for i, w in enumerate(vocab_tokens)}
-    vocab2idx[Config.PAD_TOKEN], vocab2idx[Config.UNK_TOKEN] = Config.PAD_INDEX, Config.UNK_INDEX
-    idx2vocab[Config.PAD_INDEX], idx2vocab[Config.UNK_INDEX] = Config.PAD_TOKEN, Config.UNK_TOKEN
+    vocab2idx[cf.PAD_TOKEN], vocab2idx[cf.UNK_TOKEN] = cf.PAD_INDEX, cf.UNK_INDEX
+    idx2vocab[cf.PAD_INDEX], idx2vocab[cf.UNK_INDEX] = cf.PAD_TOKEN, cf.UNK_TOKEN
     saveLogMsg('vocab2idx size: {}'.format(len(vocab2idx)))
     saveLogMsg('idx2vocab size: {}'.format(len(idx2vocab)))
     return vocab2idx, idx2vocab

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import config as Config
+import config as cf
 import os
 
 class OneHotTokenEncoder(nn.Module):
@@ -16,8 +16,8 @@ class OneHotTokenEncoder(nn.Module):
         return encoded
 
     def forward(self, samples):
-        unk_idx = self.token2idx[Config.UNK_TOKEN]
-        pad_idx = self.token2idx[Config.PAD_TOKEN]
+        unk_idx = self.token2idx[cf.UNK_TOKEN]
+        pad_idx = self.token2idx[cf.PAD_TOKEN]
 
         encoded = [[self.token2idx.get(token, unk_idx) for token in tokens] for tokens in samples]
 
@@ -51,8 +51,8 @@ class GloVeEmbedder(nn.Module):
 
         self.emb_dim = None
 
-        self.PAD_TOKEN = Config.PAD_TOKEN
-        self.UNK_TOKEN = Config.UNK_TOKEN
+        self.PAD_TOKEN = cf.PAD_TOKEN
+        self.UNK_TOKEN = cf.UNK_TOKEN
 
         idx2tok = [self.PAD_TOKEN, self.UNK_TOKEN]
         idx2vec = [None, None]
@@ -155,8 +155,8 @@ class MethodTokenEncoder(nn.Module):
         self.emb_dim = len(vocab_tokens)
 
     def forward(self, samples):
-        unk_idx = self.token2idx[Config.UNK_TOKEN]
-        pad_idx = self.token2idx[Config.PAD_TOKEN]
+        unk_idx = self.token2idx[cf.UNK_TOKEN]
+        pad_idx = self.token2idx[cf.PAD_TOKEN]
 
         encoded = np.zeros((len(samples), self.emb_dim), dtype=int)
         for i in range(len(encoded)):
