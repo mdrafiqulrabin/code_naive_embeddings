@@ -106,16 +106,18 @@ class MulBiGRUHandler:
                     out = model(batch_tokens)
 
                     y_pred = None
-                    y_target = torch.tensor(batch_target).long()
+                    y_target = torch.tensor(batch_target).long().squeeze()
+                    if len(batch_tokens) == 1:
+                        y_target = y_target.unsqueeze(0)
 
                     if torch.cuda.is_available():
                         y_pred = out.cuda()
                         loss_function = nn.CrossEntropyLoss()
                         loss_function.to(self.device)
-                        loss = loss_function(y_pred, y_target.squeeze())
+                        loss = loss_function(y_pred, y_target)
                     else:
                         y_pred = out.cpu()
-                        loss = F.cross_entropy(y_pred, y_target.squeeze())
+                        loss = F.cross_entropy(y_pred, y_target)
 
                     total_loss += loss.item()
 
@@ -145,7 +147,9 @@ class MulBiGRUHandler:
                         out = model(batch_tokens)
 
                         y_pred = None
-                        y_target = torch.tensor(batch_target).long()
+                        y_target = torch.tensor(batch_target).long().squeeze()
+                        if len(batch_tokens) == 1:
+                            y_target = y_target.unsqueeze(0)
 
                         actual.extend(batch_target)
                         if torch.cuda.is_available():
@@ -153,11 +157,11 @@ class MulBiGRUHandler:
                             predictions.extend(torch.argmax(y_pred, dim=1).tolist())
                             loss_function = nn.CrossEntropyLoss()
                             loss_function.to(self.device)
-                            loss = loss_function(y_pred, y_target.squeeze())
+                            loss = loss_function(y_pred, y_target)
                         else:
                             y_pred = out.cpu()
                             predictions.extend(np.argmax(y_pred, axis=1).tolist())
-                            loss = F.cross_entropy(y_pred, y_target.squeeze())
+                            loss = F.cross_entropy(y_pred, y_target)
 
                         total_loss += loss.item()
 
