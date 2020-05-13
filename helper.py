@@ -1,6 +1,7 @@
-import os, re
+import os, sys, re
 import config as cf
 import torch
+from subprocess import check_output
 
 # Save Log Message
 def saveLogMsg(msg):
@@ -27,7 +28,8 @@ TargetList = ["equals", "main", "setUp", "onCreate", "toString", "run", "hashCod
 
 # Remove Comments and Get Words/Chars
 def get_chars_or_words(file_path):
-    contents = ""
+    contents = []
+
     with open(file_path, 'r') as my_file:
         contents = my_file.read()
 
@@ -44,6 +46,18 @@ def get_chars_or_words(file_path):
     elif cf.TOKEN_TYPE == "char":
         contents = list(contents)
 
+    contents = [c for c in contents if c.strip()]
+
+    return contents
+
+# Get ASCII Character Sets
+def get_ascii_chars(file_path):
+    contents = []
+    with open(file_path, 'r') as my_file:
+        contents = my_file.read()
+        contents = list(contents)
+        contents = [c for c in contents if c.strip()]
+        contents = [c for c in contents if (0 <= ord(c) <= 127)]
     return contents
 
 # vocab2idx and idx2vocab

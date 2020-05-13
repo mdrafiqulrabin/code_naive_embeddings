@@ -51,8 +51,12 @@ elif cf.TOKEN_TYPE in ["word", "char"]:
     with open(cf.RAW_PATH, 'r') as path_file:
         for each_path in path_file:
             each_path = each_path.replace('\n', '')
-            path = cf.DATA_PATH + "Raw/" + each_path
-            tokens = list(hp.get_chars_or_words(path))
+            path = cf.DATA_PATH + "Body/" + each_path
+            tokens = []
+            if cf.TOKEN_TYPE == "char" and cf.ENCODE_TYPE != "GloVe":
+                tokens = hp.get_ascii_chars(path)
+            else:
+                tokens = hp.get_chars_or_words(path)
             add_dataset_entry(path, tokens)
 elif cf.TOKEN_TYPE == "hcf":
     with open(cf.HCF_PATH, 'r') as hcf_file:
@@ -64,34 +68,41 @@ elif cf.TOKEN_TYPE == "hcf":
             tokens = [1 if token > 0 else 0 for token in tokens]
             add_dataset_entry(path, tokens)
 
-hp.saveLogMsg("#training={}, #validation={}, #test={}".format(len(train_set), len(val_set), len(test_set)))
+if cf.MODE == "debug":
+    train_set, val_set, test_set = train_set[:10], val_set[:10], test_set[:10]
+hp.saveLogMsg("#Training={}, #Validation={}, #Test={}".format(len(train_set), len(val_set), len(test_set)))
 
 # Vocabulary of Tokens
+hp.saveLogMsg("\nCreating vocabulary...")
 vocab_tokens = None
 if cf.TOKEN_TYPE != "hcf":
-    hp.saveLogMsg("\nCreating vocabulary...")
-    train_tokens = [sample['tokens'] for sample in train_set]
-    flat_train_tokens = sum(train_tokens, [])
-    val_tokens = [sample['tokens'] for sample in val_set]
-    flat_val_tokens = sum(val_tokens, [])
+    train_tokens = [list(set(sample['tokens'])) for sample in train_set]
+    flat_train_tokens = list(set(sum(train_tokens, [])))
+    val_tokens = [list(set(sample['tokens'])) for sample in val_set]
+    flat_val_tokens = list(set(sum(val_tokens, [])))
     vocab_tokens = list(set(flat_train_tokens + flat_val_tokens))
     hp.saveLogMsg('Vocabulary size: {}'.format(len(vocab_tokens)))
 
 # Token Encoder
+hp.saveLogMsg("\nInitializing Token Encoder...")
 encoder = None
 if cf.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
     vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
     encoder = MethodTokenEncoder(vocab2idx)
 elif cf.TOKEN_TYPE in ["word", "char"]:
-    hp.saveLogMsg("\nLoading GloVe from {}...".format(cf.GLOVE_FILE))
-    encoder = GloVeEmbedder(vocab_tokens, cf.GLOVE_FILE)
+    if cf.ENCODE_TYPE == "GloVe":
+        hp.saveLogMsg("\nLoading GloVe from {}...".format(cf.GLOVE_FILE))
+        encoder = GloVeEmbedder(vocab_tokens, cf.GLOVE_FILE)
+    else: #OneHot
+        vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
+        encoder = OneHotTokenEncoder(vocab2idx)
 elif cf.TOKEN_TYPE == "hcf":
     encoder = HandcraftedFeatureEncoder()
 else:
     vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
     encoder = OneHotTokenEncoder(vocab2idx)
 
-hp.saveLogMsg("\nInitialized Token Encoder: {}".format(encoder))
+hp.saveLogMsg("\nToken Encoder: {}".format(encoder))
 
 # Run Model
 data_set = [train_set, val_set, test_set]
