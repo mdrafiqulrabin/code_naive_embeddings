@@ -1,19 +1,16 @@
-MODE = "train" #train/test/debug
+MODE = "train"  # train/test/debug
 
-TOKEN_TYPE   = "char" #[OnlyId/OnlyTk/AllToken]/word/char/hcf
-ENCODE_TYPE  = "onehot" #onehot/embed/GloVe/program
-DATASET_NAME = "java-large" # java-large/java-med/java-small
-DATASET_TYPE = "Reduced" #Original/Reduced/100P
-NUM_TARGET   = 11
+TOKEN_TYPE = "char"  # [OnlyId/OnlyToken/AllIdToken]/word/char
+ENCODE_TYPE = "onehot"  # onehot/embed/GloVe/program
+DATASET_NAME = "java-large"  # java-large/java-med/java-small
+DATASET_TYPE = "Cleaned"  # Original/Reduced/Cleaned
+NUM_TARGET = 11
 
 TITLE = "mbgru" + "_" + MODE + "_" + TOKEN_TYPE
 
-DATA_PATH    = "/scratch/rabin/token_embedding/data/"
-RAW_PATH     = DATA_PATH + "Raw/" + DATASET_TYPE + "/" + DATASET_NAME + "_methods.txt"
-TOKEN_PATH   = DATA_PATH + "Token/" + DATASET_TYPE + "/" + DATASET_NAME + "_" + TOKEN_TYPE + ".jsonl"
-HCF_PATH     = DATA_PATH + "Handcrafted/" + DATASET_TYPE + "/" + DATASET_NAME + "_hcf.csv"
-
-JAR_METHOD_BODY = '/scratch/rabin/token_embedding/tools/JavaMethodBody/target/jar/JavaMethodBody.jar'
+DATA_PATH = ".../token_embedding/data/"
+RAW_PATH = DATA_PATH + "Raw/" + DATASET_TYPE + "/" + DATASET_NAME + "_methods.txt"
+TOKEN_PATH = DATA_PATH + "Token/" + DATASET_TYPE + "/" + DATASET_NAME + "_" + TOKEN_TYPE + ".jsonl"
 
 GLOVE_FILE = DATA_PATH + "GloVe/glove.6B.300d.txt"
 if TOKEN_TYPE == "char": GLOVE_FILE = DATA_PATH + "GloVe/glove.840B.300d-" + TOKEN_TYPE + ".txt"
@@ -33,6 +30,6 @@ HIDDEN_LAYER = 2
 HIDDEN_DIM = 128
 DROPOUT_RATIO = 0.3
 
-RESULT_PATH = "/scratch/rabin/token_embedding/results/"
-MODEL_PATH  = RESULT_PATH + TITLE + ".model"
-LOG_PATH    = RESULT_PATH + TITLE + ".log"
+RESULT_PATH = ".../token_embedding/results/"
+MODEL_PATH = RESULT_PATH + TITLE + ".model"
+LOG_PATH = RESULT_PATH + TITLE + ".log"

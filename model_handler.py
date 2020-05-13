@@ -1,23 +1,24 @@
-import numpy as np
 import random
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.nn import functional as F
-
-from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
+from sklearn.metrics import f1_score
+from torch.nn import functional as F
 
 import config as cf
 import helper as hp
+
 
 # Multi-layer Bidirectional GRU
 class MulBiGRULayer(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layers, drop_ratio):
         super(MulBiGRULayer, self).__init__()
         self.hidden_dim = hidden_dim
-        self.gru = nn.GRU(input_dim, hidden_dim//2, bidirectional=True,
+        self.gru = nn.GRU(input_dim, hidden_dim // 2, bidirectional=True,
                           num_layers=num_layers, dropout=drop_ratio)
 
     def forward(self, vectors, mask):
@@ -32,7 +33,7 @@ class MulBiGRULayer(nn.Module):
         assert gru_out.size(2) == self.hidden_dim
 
         # Separate the directions of the GRU
-        gru_out = gru_out.view(batch_size, maxlen, 2, self.hidden_dim//2)
+        gru_out = gru_out.view(batch_size, maxlen, 2, self.hidden_dim // 2)
 
         # Pick up the last hidden state per direction
         fw_last_hn = gru_out[range(batch_size), lengths - 1, 0]  # (batch, hidden//2)
@@ -41,6 +42,7 @@ class MulBiGRULayer(nn.Module):
         last_hn = torch.cat([fw_last_hn, bw_last_hn], dim=1)  # (batch, hidden//2) -> (batch, hidden)
 
         return {'output': last_hn, 'outputs': gru_out}
+
 
 # RNNClassifier with Encoder and Extractor
 class RNNClassifier(nn.Module):
@@ -57,6 +59,7 @@ class RNNClassifier(nn.Module):
         output = f(self.classifier(extracted['output']))
         return output
 
+
 # Model Handler for MulBiGRU
 class MulBiGRUHandler:
 
@@ -71,13 +74,13 @@ class MulBiGRUHandler:
         # Set the MulBiGRULayer
         model_layer = MulBiGRULayer(self.encoder.emb_dim, hidden_dim=cf.HIDDEN_DIM,
                                     num_layers=cf.HIDDEN_LAYER, drop_ratio=cf.DROPOUT_RATIO)
-        hp.saveLogMsg("\nModel Layer = {}".format(model_layer))
+        hp.save_log_msg("\nModel Layer = {}".format(model_layer))
 
         # Set the RNNClassifier
         running_model = RNNClassifier(self.encoder, model_layer)
         if torch.cuda.is_available():
             running_model = running_model.to(self.device)
-        hp.saveLogMsg("\nRunning Model = {}".format(running_model))
+        hp.save_log_msg("\nRunning Model = {}".format(running_model))
 
         return running_model
 
@@ -193,20 +196,21 @@ class MulBiGRUHandler:
                 epoch_msg += ' [VAL] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(val_loss, val_f1, val_acc)
 
                 best_f1, epoch_track, patience_track = hp.track_best_model(cf.MODEL_PATH, model, epoch + 1,
-                                    best_f1, val_f1, val_acc, val_loss, patience_track)
-                hp.saveLogMsg(epoch_msg + epoch_track)
+                                                                           best_f1, val_f1, val_acc, val_loss,
+                                                                           patience_track)
+                hp.save_log_msg(epoch_msg + epoch_track)
                 if patience_track == int(cf.PATIENCE):
-                    hp.saveLogMsg('\nNo accuracy improvement for {} consecutive epochs, stopping training!'
+                    hp.save_log_msg('\nNo accuracy improvement for {} consecutive epochs, stopping training!'
                                     .format(cf.PATIENCE))
                     break
 
-            hp.saveLogMsg('Done Training.')
+            hp.save_log_msg('Done Training.')
 
             state = torch.load(cf.MODEL_PATH)
             model.load_state_dict(state['model'])
 
-            hp.saveLogMsg('\nReturning best model - [VAL] epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
-                format(state['epoch'], state['loss'], state['f1'], state['acc']))
+            hp.save_log_msg('\nReturning best model - [VAL] epoch {}, loss {:.4f}, f1-score {:.4f}, accuracy {:.4f}'.
+                            format(state['epoch'], state['loss'], state['f1'], state['acc']))
 
             return model
 
@@ -216,8 +220,9 @@ class MulBiGRUHandler:
             best_model = training_loop(running_model, self.dataset)
         else:
             best_model = running_model
-        test_true, test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2], batch_size=cf.BATCH_SIZE)
-        hp.saveLogMsg('\n[Test] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(test_loss, test_f1, test_acc))
+        test_true, test_pred, test_loss, test_f1, test_acc = evaluate(best_model, self.dataset[2],
+                                                                      batch_size=cf.BATCH_SIZE)
+        hp.save_log_msg('\n[Test] Loss: {:.4f}, F1: {:.4f}, Acc: {:.4f}'.format(test_loss, test_f1, test_acc))
         clf_report = classification_report(test_true, test_pred, output_dict=False)
-        hp.saveLogMsg('\n[Test] Classification Report: \n{}'.format(clf_report))
+        hp.save_log_msg('\n[Test] Classification Report: \n{}'.format(clf_report))
         return best_model

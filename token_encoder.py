@@ -1,8 +1,11 @@
+import os
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+
 import config as cf
-import os
+
 
 class OneHotTokenEncoder(nn.Module):
     def __init__(self, vocab_tokens):
@@ -44,9 +47,10 @@ class OneHotTokenEncoder(nn.Module):
 
         return result
 
-class GloVeEmbedder(nn.Module):
+
+class GloVeEmbedding(nn.Module):
     def __init__(self, vocab_tokens, glove_file):
-        super(GloVeEmbedder, self).__init__()
+        super(GloVeEmbedding, self).__init__()
         assert os.path.exists(glove_file) and glove_file.endswith('.txt'), glove_file
 
         self.emb_dim = None
@@ -119,10 +123,11 @@ class GloVeEmbedder(nn.Module):
 
         return result
 
+
 class HandcraftedFeatureEncoder(nn.Module):
     def __init__(self):
         super(HandcraftedFeatureEncoder, self).__init__()
-        self.emb_dim = 39 #TODO
+        self.emb_dim = 39  # Check
 
     def forward(self, samples):
         encoded = np.zeros((len(samples), self.emb_dim), dtype=int)
@@ -147,6 +152,7 @@ class HandcraftedFeatureEncoder(nn.Module):
         }
 
         return result
+
 
 class MethodTokenEncoder(nn.Module):
     def __init__(self, vocab_tokens):

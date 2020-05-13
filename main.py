@@ -1,11 +1,13 @@
-import os, pathlib
+import pathlib
+
+import numpy as np
 
 import config as cf
 import helper as hp
 
-import numpy as np
 np.random.seed(cf.MANUAL_SEED)
 import torch
+
 torch.manual_seed(cf.MANUAL_SEED)
 
 from token_encoder import *
@@ -16,18 +18,19 @@ pathlib.Path(cf.LOG_PATH).parent.mkdir(parents=True, exist_ok=True)
 open(cf.LOG_PATH, 'w').close()
 
 # Set Device (cuda/cpu)
-hp.saveLogMsg("\nAttaching device...")
+hp.save_log_msg("\nAttaching device...")
 device = None
 if torch.cuda.is_available():
     torch.set_default_tensor_type(torch.cuda.FloatTensor)
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-hp.saveLogMsg("device = {}".format(str(device)))
+hp.save_log_msg("device = {}".format(str(device)))
 
 # Loading Data
-hp.saveLogMsg("\nLoading data [{}]...".format(cf.TOKEN_TYPE))
+hp.save_log_msg("\nLoading data [{}]...".format(cf.TOKEN_TYPE))
 train_set, val_set, test_set = [], [], []
+
 
 def add_dataset_entry(path, tokens):
     method = (path.split("_")[-1]).replace(".java", "")
@@ -40,7 +43,8 @@ def add_dataset_entry(path, tokens):
     else:
         test_set.append(entry)
 
-if cf.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
+
+if cf.TOKEN_TYPE in ["OnlyId", "OnlyToken", "AllIdToken"]:
     with open(cf.TOKEN_PATH, 'r') as jsons_file:
         for each_json in jsons_file:
             json_dict = eval(str(each_json))
@@ -58,51 +62,38 @@ elif cf.TOKEN_TYPE in ["word", "char"]:
             else:
                 tokens = hp.get_chars_or_words(path)
             add_dataset_entry(path, tokens)
-elif cf.TOKEN_TYPE == "hcf":
-    with open(cf.HCF_PATH, 'r') as hcf_file:
-        for each_hcf in hcf_file:
-            each_hcf = each_hcf.replace('\n', '')
-            path = each_hcf.split(',')[0]
-            tokens = each_hcf.split(',')[2:]
-            tokens = list(map(int, tokens))
-            tokens = [1 if token > 0 else 0 for token in tokens]
-            add_dataset_entry(path, tokens)
 
 if cf.MODE == "debug":
     train_set, val_set, test_set = train_set[:10], val_set[:10], test_set[:10]
-hp.saveLogMsg("#Training={}, #Validation={}, #Test={}".format(len(train_set), len(val_set), len(test_set)))
+hp.save_log_msg("#Training={}, #Validation={}, #Test={}".format(len(train_set), len(val_set), len(test_set)))
 
 # Vocabulary of Tokens
-hp.saveLogMsg("\nCreating vocabulary...")
-vocab_tokens = None
-if cf.TOKEN_TYPE != "hcf":
-    train_tokens = [list(set(sample['tokens'])) for sample in train_set]
-    flat_train_tokens = list(set(sum(train_tokens, [])))
-    val_tokens = [list(set(sample['tokens'])) for sample in val_set]
-    flat_val_tokens = list(set(sum(val_tokens, [])))
-    vocab_tokens = list(set(flat_train_tokens + flat_val_tokens))
-    hp.saveLogMsg('Vocabulary size: {}'.format(len(vocab_tokens)))
+hp.save_log_msg("\nCreating vocabulary...")
+train_tokens = [list(set(sample['tokens'])) for sample in train_set]
+flat_train_tokens = list(set(sum(train_tokens, [])))
+val_tokens = [list(set(sample['tokens'])) for sample in val_set]
+flat_val_tokens = list(set(sum(val_tokens, [])))
+vocab_tokens = list(set(flat_train_tokens + flat_val_tokens))
+hp.save_log_msg('Vocabulary size: {}'.format(len(vocab_tokens)))
 
 # Token Encoder
-hp.saveLogMsg("\nInitializing Token Encoder...")
+hp.save_log_msg("\nInitializing Token Encoder...")
 encoder = None
-if cf.TOKEN_TYPE in ["OnlyId", "OnlyTk", "AllToken"]:
+if cf.TOKEN_TYPE in ["OnlyId", "OnlyToken", "AllIdToken"]:
     vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
     encoder = MethodTokenEncoder(vocab2idx)
 elif cf.TOKEN_TYPE in ["word", "char"]:
     if cf.ENCODE_TYPE == "GloVe":
-        hp.saveLogMsg("\nLoading GloVe from {}...".format(cf.GLOVE_FILE))
-        encoder = GloVeEmbedder(vocab_tokens, cf.GLOVE_FILE)
-    else: #OneHot
+        hp.save_log_msg("\nLoading GloVe from {}...".format(cf.GLOVE_FILE))
+        encoder = GloVeEmbedding(vocab_tokens, cf.GLOVE_FILE)
+    else:  # OneHot
         vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
         encoder = OneHotTokenEncoder(vocab2idx)
-elif cf.TOKEN_TYPE == "hcf":
-    encoder = HandcraftedFeatureEncoder()
 else:
     vocab2idx, idx2vocab = hp.get_vocab2idx_idx2vocab(vocab_tokens)
     encoder = OneHotTokenEncoder(vocab2idx)
 
-hp.saveLogMsg("\nToken Encoder: {}".format(encoder))
+hp.save_log_msg("\nToken Encoder: {}".format(encoder))
 
 # Run Model
 data_set = [train_set, val_set, test_set]
